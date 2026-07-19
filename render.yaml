@@ -1,12 +1,7 @@
 services:
   - type: web
     name: face-attendance-system
-    runtime: python
-    buildCommand: |
-      export CMAKE_BUILD_PARALLEL_LEVEL=1
-      export MAX_JOBS=1
-      pip install --no-cache-dir -r requirements.txt
-    startCommand: gunicorn app:app
+    runtime: docker
     envVars:
       - key: SECRET_KEY
         generateValue: true
