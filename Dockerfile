@@ -23,8 +23,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
-# Expose port (Render defaults to 10000 or reads PORT env)
-EXPOSE 10000
+# Expose port 7860 (Hugging Face Spaces default)
+EXPOSE 7860
 
 # Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:10000", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:7860", "app:app"]
