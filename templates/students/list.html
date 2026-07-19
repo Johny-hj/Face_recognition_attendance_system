@@ -1,0 +1,464 @@
+{% extends 'base.html' %}
+{% block title %}Students - Face Attendance{% endblock %}
+{% block page_title %}Student Management{% endblock %}
+
+{% block content %}
+<!-- ── Top Action Bar ── -->
+<div class="spatial-card mb-4">
+  <div class="spatial-card-body">
+    <form method="GET" action="/students" id="filterForm" class="d-flex flex-wrap align-items-center gap-3">
+
+      <!-- Search Input -->
+      <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 400px;">
+        <i class="bi bi-search position-absolute" style="left: 16px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.4); font-size: 0.9rem;"></i>
+        <input type="text" name="search" value="{{ search }}" class="spatial-input" placeholder="Search students…" style="padding-left: 42px;" id="studentSearchInput">
+      </div>
+
+      <!-- Department Filter -->
+      <div style="min-width: 180px;">
+        <select name="department" class="spatial-input" id="departmentFilter" onchange="document.getElementById('filterForm').submit();">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+          <option value="{{ dept }}" {% if dept == selected_dept %}selected{% endif %}>{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Search Submit -->
+      <button type="submit" class="spatial-pill-btn btn-primary" id="searchBtn">
+        <i class="bi bi-search me-1"></i> Search
+      </button>
+
+      <!-- Add Student -->
+      <button type="button" class="spatial-pill-btn btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#addStudentModal" id="addStudentBtn">
+        <i class="bi bi-person-plus-fill me-1"></i> Add Student
+      </button>
+
+    </form>
+  </div>
+</div>
+
+<!-- ── Student Table ── -->
+<div class="spatial-card mb-4">
+  <div class="spatial-card-header">
+    <h5 class="spatial-card-title"><i class="bi bi-people-fill me-2" style="color:#007AFF;"></i>Students</h5>
+  </div>
+  <div class="spatial-card-body">
+    <div class="table-responsive">
+      <table class="data-table" id="studentsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Photo</th>
+            <th>Name</th>
+            <th>Roll No</th>
+            <th>Department</th>
+            <th>Year</th>
+            <th>Section</th>
+            <th>Face Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>
+              {% if student.photo %}
+              <img src="{{ url_for('static', filename='uploads/' + student.photo) }}" class="student-avatar" alt="{{ student.name }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%;">
+              {% else %}
+              <div class="student-avatar-placeholder" style="width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: var(--spatial-bg-elevated); color: var(--spatial-text-secondary); font-size: 24px;">
+                <i class="bi bi-person-fill"></i>
+              </div>
+              {% endif %}
+            </td>
+            <td>{{ student.name }}</td>
+            <td>{{ student.roll_number }}</td>
+            <td>{{ student.department }}</td>
+            <td>{{ student.year or '-' }}</td>
+            <td>{{ student.section or '-' }}</td>
+            <td>
+              {% if student.face_encoding %}
+              <span class="face-status face-registered"><i class="bi bi-check-circle-fill me-1"></i>Registered</span>
+              {% else %}
+              <span class="face-status face-not-registered"><i class="bi bi-x-circle-fill me-1"></i>Not Registered</span>
+              {% endif %}
+            </td>
+            <td class="actions-cell">
+              <a href="/students/register-face/{{ student.id }}" class="spatial-pill-btn btn-sm btn-info" title="Register Face" id="registerFaceBtn{{ student.id }}">
+                <i class="bi bi-camera-fill"></i>
+              </a>
+              <button class="spatial-pill-btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editStudentModal{{ student.id }}" title="Edit" id="editStudentBtn{{ student.id }}">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="spatial-pill-btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteStudentModal{{ student.id }}" title="Delete" id="deleteStudentBtn{{ student.id }}">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+
+          {% if not students %}
+          <tr>
+            <td colspan="9" class="text-center py-5">
+              <div class="empty-state">
+                <i class="bi bi-person-x" style="font-size: 2.5rem; color: rgba(255,255,255,0.25);"></i>
+                <p class="mt-3" style="color: rgba(255,255,255,0.45); font-size: 0.95rem;">No students found. Click "Add Student" to get started.</p>
+              </div>
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- ── Add Student Modal ── -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content spatial-glass">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="addStudentModalLabel">
+          <i class="bi bi-person-plus-fill me-2" style="color:#007AFF;"></i>Add New Student
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{{ url_for('students.add_student') }}" method="POST" enctype="multipart/form-data" id="addStudentForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+
+          <div class="row g-3">
+            <!-- Name -->
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Full Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="spatial-input w-100" placeholder="Enter full name" required id="addStudentName">
+            </div>
+            <!-- Roll Number -->
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Roll Number <span class="text-danger">*</span></label>
+              <input type="text" name="roll_number" class="spatial-input w-100" placeholder="Enter roll number" required id="addStudentRoll">
+            </div>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <!-- Department -->
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Department <span class="text-danger">*</span></label>
+              <input type="text" name="department" class="spatial-input w-100" required id="addStudentDept" list="deptList" placeholder="e.g. Computer Science">
+              <datalist id="deptList">
+                {% for dept in departments %}
+                <option value="{{ dept }}">
+                {% endfor %}
+              </datalist>
+            </div>
+            <!-- Year -->
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Year</label>
+              <input type="number" name="year" class="spatial-input w-100" placeholder="1-4" min="1" max="4" id="addStudentYear">
+            </div>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <!-- Section -->
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Section</label>
+              <input type="text" name="section" class="spatial-input w-100" placeholder="e.g. A, B, C" id="addStudentSection">
+            </div>
+            <!-- Email -->
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Email</label>
+              <input type="email" name="email" class="spatial-input w-100" placeholder="student@example.com" id="addStudentEmail">
+            </div>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <!-- Phone -->
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Phone</label>
+              <input type="tel" name="phone" class="spatial-input w-100" placeholder="Phone number" id="addStudentPhone">
+            </div>
+            <!-- Live Selfie -->
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Live Photo <span class="text-danger">*</span></label>
+              <div style="position:relative; background:rgba(0,0,0,0.3); border-radius:12px; overflow:hidden; aspect-ratio:1; display:flex; align-items:center; justify-content:center;" id="selfieBox">
+                <video id="selfieVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover; display:none;"></video>
+                <canvas id="selfieCanvas" style="display:none;"></canvas>
+                <img id="selfiePreview" style="width:100%; height:100%; object-fit:cover; display:none; border-radius:12px;">
+                <div id="selfiePlaceholder" style="text-align:center; color:rgba(255,255,255,0.4);">
+                  <i class="bi bi-camera" style="font-size:2rem;"></i>
+                  <p style="font-size:0.8rem; margin-top:4px;">Click to take selfie</p>
+                </div>
+              </div>
+              <input type="hidden" name="photo_data" id="selfieData">
+              <div class="d-flex gap-2 mt-2">
+                <button type="button" class="spatial-pill-btn btn-primary w-100" id="startSelfieBtn" onclick="startSelfie()">
+                  <i class="bi bi-camera-video me-1"></i> Open Camera
+                </button>
+                <button type="button" class="spatial-pill-btn btn-success w-100" id="captureSelfieBtn" onclick="captureSelfie()" style="display:none;">
+                  <i class="bi bi-camera me-1"></i> Capture
+                </button>
+                <button type="button" class="spatial-pill-btn btn-secondary" id="retakeSelfieBtn" onclick="retakeSelfie()" style="display:none;">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="spatial-pill-btn btn-secondary" data-bs-dismiss="modal" onclick="stopSelfieCamera()">Cancel</button>
+          <button type="submit" class="spatial-pill-btn btn-primary" id="addStudentSubmit">
+            <i class="bi bi-person-plus-fill me-1"></i> Add Student
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+let selfieStream = null;
+
+function startSelfie() {
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function(stream) {
+      selfieStream = stream;
+      const video = document.getElementById('selfieVideo');
+      video.srcObject = stream;
+      video.style.display = 'block';
+      document.getElementById('selfiePlaceholder').style.display = 'none';
+      document.getElementById('selfiePreview').style.display = 'none';
+      document.getElementById('startSelfieBtn').style.display = 'none';
+      document.getElementById('captureSelfieBtn').style.display = 'block';
+    })
+    .catch(function(err) {
+      alert('Camera error: ' + err.message + '. Please allow camera access.');
+    });
+}
+
+function captureSelfie() {
+  const video = document.getElementById('selfieVideo');
+  const canvas = document.getElementById('selfieCanvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  document.getElementById('selfieData').value = dataUrl;
+  document.getElementById('selfiePreview').src = dataUrl;
+  document.getElementById('selfiePreview').style.display = 'block';
+  document.getElementById('selfieVideo').style.display = 'none';
+  document.getElementById('captureSelfieBtn').style.display = 'none';
+  document.getElementById('retakeSelfieBtn').style.display = 'block';
+  stopSelfieCamera();
+}
+
+function retakeSelfie() {
+  document.getElementById('selfiePreview').style.display = 'none';
+  document.getElementById('selfieData').value = '';
+  document.getElementById('retakeSelfieBtn').style.display = 'none';
+  document.getElementById('startSelfieBtn').style.display = 'block';
+  document.getElementById('selfiePlaceholder').style.display = 'block';
+}
+
+function stopSelfieCamera() {
+  if (selfieStream) {
+    selfieStream.getTracks().forEach(t => t.stop());
+    selfieStream = null;
+  }
+}
+
+// Stop camera when modal closes
+document.getElementById('addStudentModal').addEventListener('hidden.bs.modal', stopSelfieCamera);
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- ── Edit Student Modals (one per student) ── -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+{% for student in students %}
+<div class="modal fade" id="editStudentModal{{ student.id }}" tabindex="-1" aria-labelledby="editStudentModalLabel{{ student.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content spatial-glass">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="editStudentModalLabel{{ student.id }}">
+          <i class="bi bi-pencil-fill me-2" style="color:#FF9500;"></i>Edit Student — {{ student.name }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{{ url_for('students.edit_student', id=student.id) }}" method="POST" enctype="multipart/form-data" id="editStudentForm{{ student.id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Full Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="spatial-input w-100" value="{{ student.name }}" required id="editStudentName{{ student.id }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Roll Number <span class="text-danger">*</span></label>
+              <input type="text" name="roll_number" class="spatial-input w-100" value="{{ student.roll_number }}" required id="editStudentRoll{{ student.id }}">
+            </div>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Department <span class="text-danger">*</span></label>
+              <input type="text" name="department" class="spatial-input w-100" required id="editStudentDept{{ student.id }}" list="deptList" value="{{ student.department }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Year</label>
+              <input type="number" name="year" class="spatial-input w-100" value="{{ student.year or '' }}" min="1" max="4" id="editStudentYear{{ student.id }}">
+            </div>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Section</label>
+              <input type="text" name="section" class="spatial-input w-100" value="{{ student.section or '' }}" id="editStudentSection{{ student.id }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Email</label>
+              <input type="email" name="email" class="spatial-input w-100" value="{{ student.email or '' }}" id="editStudentEmail{{ student.id }}">
+            </div>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Phone</label>
+              <input type="tel" name="phone" class="spatial-input w-100" value="{{ student.phone or '' }}" id="editStudentPhone{{ student.id }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-white-50">Update Photo (optional)</label>
+              <div style="position:relative; background:rgba(0,0,0,0.3); border-radius:12px; overflow:hidden; aspect-ratio:1; display:flex; align-items:center; justify-content:center;" id="editSelfieBox{{ student.id }}">
+                <video id="editSelfieVideo{{ student.id }}" autoplay playsinline style="width:100%; height:100%; object-fit:cover; display:none;"></video>
+                <canvas id="editSelfieCanvas{{ student.id }}" style="display:none;"></canvas>
+                {% if student.photo %}
+                <img id="editSelfiePreview{{ student.id }}" src="{{ url_for('static', filename='uploads/' + student.photo) }}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">
+                {% else %}
+                <img id="editSelfiePreview{{ student.id }}" style="width:100%; height:100%; object-fit:cover; display:none; border-radius:12px;">
+                <div id="editSelfiePlaceholder{{ student.id }}" style="text-align:center; color:rgba(255,255,255,0.4);">
+                  <i class="bi bi-camera" style="font-size:2rem;"></i>
+                  <p style="font-size:0.8rem; margin-top:4px;">Take new photo</p>
+                </div>
+                {% endif %}
+              </div>
+              <input type="hidden" name="photo_data" id="editSelfieData{{ student.id }}">
+              <div class="d-flex gap-2 mt-2">
+                <button type="button" class="spatial-pill-btn btn-primary w-100" onclick="startEditSelfie('{{ student.id }}')">
+                  <i class="bi bi-camera-video me-1"></i> Open Camera
+                </button>
+                <button type="button" class="spatial-pill-btn btn-success w-100" id="editCaptureSelfieBtn{{ student.id }}" onclick="captureEditSelfie('{{ student.id }}')" style="display:none;">
+                  <i class="bi bi-camera me-1"></i> Capture
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="spatial-pill-btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="spatial-pill-btn btn-primary" id="editStudentSubmit{{ student.id }}">
+            <i class="bi bi-check-lg me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- ── Delete Student Modals (one per student) ── -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+{% for student in students %}
+<div class="modal fade" id="deleteStudentModal{{ student.id }}" tabindex="-1" aria-labelledby="deleteStudentModalLabel{{ student.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content spatial-glass">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="deleteStudentModalLabel{{ student.id }}">
+          <i class="bi bi-exclamation-triangle-fill me-2" style="color:#FF3B30;"></i>Confirm Deletion
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{{ url_for('students.delete_student', id=student.id) }}" method="POST" id="deleteStudentForm{{ student.id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <div class="text-center py-3">
+            <div class="mb-3">
+              <i class="bi bi-person-x-fill" style="font-size: 3rem; color: #FF3B30;"></i>
+            </div>
+            <p style="color: rgba(255,255,255,0.8); font-size: 1.05rem;">
+              Are you sure you want to delete <strong style="color:#fff;">{{ student.name }}</strong>?
+            </p>
+            <p class="text-white-50" style="font-size: 0.85rem;">This action cannot be undone. All associated data, including face encodings and attendance records, will be permanently removed.</p>
+          </div>
+        </div>
+        <div class="modal-footer border-0 justify-content-center gap-3">
+          <button type="button" class="spatial-pill-btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="spatial-pill-btn btn-danger" id="deleteStudentSubmit{{ student.id }}">
+            <i class="bi bi-trash-fill me-1"></i> Delete Student
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Edit modal selfie functions
+let editSelfieStreams = {};
+
+function startEditSelfie(sid) {
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function(stream) {
+      editSelfieStreams[sid] = stream;
+      const video = document.getElementById('editSelfieVideo' + sid);
+      video.srcObject = stream;
+      video.style.display = 'block';
+      const placeholder = document.getElementById('editSelfiePlaceholder' + sid);
+      if (placeholder) placeholder.style.display = 'none';
+      document.getElementById('editSelfiePreview' + sid).style.display = 'none';
+      document.getElementById('editCaptureSelfieBtn' + sid).style.display = 'block';
+    })
+    .catch(function(err) {
+      alert('Camera error: ' + err.message);
+    });
+}
+
+function captureEditSelfie(sid) {
+  const video = document.getElementById('editSelfieVideo' + sid);
+  const canvas = document.getElementById('editSelfieCanvas' + sid);
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  document.getElementById('editSelfieData' + sid).value = dataUrl;
+  const preview = document.getElementById('editSelfiePreview' + sid);
+  preview.src = dataUrl;
+  preview.style.display = 'block';
+  video.style.display = 'none';
+  document.getElementById('editCaptureSelfieBtn' + sid).style.display = 'none';
+  if (editSelfieStreams[sid]) {
+    editSelfieStreams[sid].getTracks().forEach(t => t.stop());
+    delete editSelfieStreams[sid];
+  }
+}
+
+// Stop edit selfie cameras when modals close
+document.querySelectorAll('[id^="editStudentModal"]').forEach(function(modal) {
+  modal.addEventListener('hidden.bs.modal', function() {
+    const sid = modal.id.replace('editStudentModal', '');
+    if (editSelfieStreams[sid]) {
+      editSelfieStreams[sid].getTracks().forEach(t => t.stop());
+      delete editSelfieStreams[sid];
+    }
+  });
+});
+</script>
+{% endblock %}

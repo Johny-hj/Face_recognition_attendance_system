@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}Attendance - Face Attendance{% endblock %}
+{% block page_title %}Attendance Records{% endblock %}
+
+{% block content %}
+<!-- ── Filter Bar ── -->
+<div class="spatial-card" style="margin-bottom: 24px;">
+  <form method="GET" action="{{ request.path }}">
+    <div class="d-flex flex-wrap align-items-end gap-3">
+      <!-- Date Filter -->
+      <div class="flex-fill" style="min-width: 160px;">
+        <label class="form-label" style="font-weight: 500; font-size: 0.85rem; opacity: 0.8;">
+          <i class="bi bi-calendar3"></i> Date
+        </label>
+        <input type="date" class="spatial-input" name="date" id="filterDate"
+               value="{{ filters.get('date', '') }}">
+      </div>
+
+      <!-- Department Filter -->
+      <div class="flex-fill" style="min-width: 180px;">
+        <label class="form-label" style="font-weight: 500; font-size: 0.85rem; opacity: 0.8;">
+          <i class="bi bi-building"></i> Department
+        </label>
+        <select class="spatial-input" name="department" id="filterDepartment">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+          <option value="{{ dept }}" {% if filters.get('department') == dept %}selected{% endif %}>{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="flex-fill" style="min-width: 150px;">
+        <label class="form-label" style="font-weight: 500; font-size: 0.85rem; opacity: 0.8;">
+          <i class="bi bi-check2-circle"></i> Status
+        </label>
+        <select class="spatial-input" name="status" id="filterStatus">
+          <option value="">All</option>
+          <option value="Present" {% if filters.get('status') == 'Present' %}selected{% endif %}>Present</option>
+          <option value="Late" {% if filters.get('status') == 'Late' %}selected{% endif %}>Late</option>
+          <option value="Absent" {% if filters.get('status') == 'Absent' %}selected{% endif %}>Absent</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex flex-wrap gap-2 align-items-end">
+        <button type="submit" class="spatial-pill-btn btn-primary" id="filterBtn">
+          <i class="bi bi-funnel"></i> Filter
+        </button>
+
+        <a href="{{ url_for('attendance.start') }}" class="spatial-pill-btn btn-success" id="startAttendanceBtn">
+          <i class="bi bi-camera-video-fill"></i> Start Attendance
+        </a>
+
+        <!-- Export Dropdown -->
+        <div class="dropdown">
+          <button class="spatial-pill-btn btn-info dropdown-toggle" type="button"
+                  id="exportDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-download"></i> Export
+          </button>
+          <ul class="dropdown-menu spatial-glass" aria-labelledby="exportDropdownBtn">
+            <li>
+              <a class="dropdown-item" id="exportToday"
+                 href="{{ url_for('attendance.download') }}?period=today">
+                <i class="bi bi-calendar-day"></i> Today's Report
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" id="exportWeekly"
+                 href="{{ url_for('attendance.download') }}?period=weekly">
+                <i class="bi bi-calendar-week"></i> Weekly Report
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" id="exportMonthly"
+                 href="{{ url_for('attendance.download') }}?period=monthly">
+                <i class="bi bi-calendar-month"></i> Monthly Report
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- ── Attendance Table ── -->
+<div class="spatial-card">
+  <div class="table-responsive">
+    <table class="data-table" id="attendanceTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th><i class="bi bi-calendar3"></i> Date</th>
+          <th><i class="bi bi-clock"></i> Time</th>
+          <th><i class="bi bi-person"></i> Student Name</th>
+          <th><i class="bi bi-hash"></i> Roll No</th>
+          <th><i class="bi bi-building"></i> Department</th>
+          <th><i class="bi bi-check2-circle"></i> Status</th>
+          <th><i class="bi bi-speedometer2"></i> Confidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if attendance_records.items %}
+          {% for record in attendance_records.items %}
+          <tr>
+            <td>{{ loop.index + (attendance_records.page - 1) * attendance_records.per_page }}</td>
+            <td>{{ record.date }}</td>
+            <td>{{ record.time }}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(0, 122, 255, 0.15); display: flex; align-items: center; justify-content: center; color: #007AFF; font-weight: 600; font-size: 0.8rem;">
+                  {{ record.student.name[0] }}
+                </div>
+                {{ record.student.name }}
+              </div>
+            </td>
+            <td><code style="background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 6px;">{{ record.student.roll_number }}</code></td>
+            <td>{{ record.student.department }}</td>
+            <td>
+              <span class="status-badge {% if record.status == 'Present' %}badge-present{% elif record.status == 'Late' %}badge-late{% else %}badge-absent{% endif %}">
+                {% if record.status == 'Present' %}
+                  <i class="bi bi-check-circle-fill"></i>
+                {% elif record.status == 'Late' %}
+                  <i class="bi bi-clock-fill"></i>
+                {% else %}
+                  <i class="bi bi-x-circle-fill"></i>
+                {% endif %}
+                {{ record.status }}
+              </span>
+            </td>
+            <td>
+              <span class="confidence-value">{{ record.confidence }}%</span>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 60px 20px;">
+              <div style="opacity: 0.5;">
+                <i class="bi bi-inbox" style="font-size: 3rem; display: block; margin-bottom: 12px;"></i>
+                <p style="font-size: 1.1rem; font-weight: 500; margin-bottom: 4px;">No attendance records found</p>
+                <small>Adjust your filters or start a new attendance session</small>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Pagination ── -->
+{% if attendance_records.pages > 1 %}
+<nav class="pagination-nav" aria-label="Attendance pagination" style="margin-top: 24px;">
+  <ul class="pagination" style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; list-style: none; padding: 0; margin: 0;">
+    {% if attendance_records.has_prev %}
+    <li>
+      <a href="?page={{ attendance_records.prev_num }}&date={{ filters.get('date', '') }}&department={{ filters.get('department', '') }}&status={{ filters.get('status', '') }}"
+         class="spatial-pill-btn btn-sm" id="paginationPrev">
+        <i class="bi bi-chevron-left"></i> Previous
+      </a>
+    </li>
+    {% endif %}
+
+    {% for p in range(1, attendance_records.pages + 1) %}
+    <li>
+      <a href="?page={{ p }}&date={{ filters.get('date', '') }}&department={{ filters.get('department', '') }}&status={{ filters.get('status', '') }}"
+         class="spatial-pill-btn btn-sm {% if p == attendance_records.page %}active{% endif %}"
+         id="paginationPage{{ p }}">
+        {{ p }}
+      </a>
+    </li>
+    {% endfor %}
+
+    {% if attendance_records.has_next %}
+    <li>
+      <a href="?page={{ attendance_records.next_num }}&date={{ filters.get('date', '') }}&department={{ filters.get('department', '') }}&status={{ filters.get('status', '') }}"
+         class="spatial-pill-btn btn-sm" id="paginationNext">
+        Next <i class="bi bi-chevron-right"></i>
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

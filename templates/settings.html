@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% block title %}Settings - Face Attendance{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-6">
+    <form method="POST" action="{{ url_for('settings.update') }}" id="settingsForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- ── Recognition Settings ── -->
+      <div class="spatial-card" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 20px 0; font-weight: 600;">
+          <i class="bi bi-cpu-fill" style="color: #007AFF;"></i> Recognition Settings
+        </h3>
+
+        <!-- Recognition Threshold -->
+        <div class="mb-4">
+          <label class="form-label" for="thresholdRange" style="font-weight: 500;">Recognition Threshold</label>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <input type="range" class="form-range" id="thresholdRange" name="recognition_threshold"
+                   min="0.1" max="1.0" step="0.05" value="{{ settings.recognition_threshold }}"
+                   oninput="document.getElementById('thresholdValue').textContent = this.value"
+                   style="flex: 1;">
+            <span id="thresholdValue" class="spatial-pill-btn btn-sm"
+                  style="min-width: 50px; text-align: center; pointer-events: none;">
+              {{ settings.recognition_threshold }}
+            </span>
+          </div>
+          <small style="opacity: 0.6; display: block; margin-top: 6px;">
+            <i class="bi bi-info-circle"></i> Higher values = stricter matching. Recommended: 0.6
+          </small>
+        </div>
+
+        <!-- Detection Model -->
+        <div class="mb-4">
+          <label class="form-label" for="detectionModel" style="font-weight: 500;">Detection Model</label>
+          <select class="spatial-input" name="detection_model" id="detectionModel">
+            <option value="hog" {% if settings.detection_model == 'hog' %}selected{% endif %}>HOG (Faster, less accurate)</option>
+            <option value="cnn" {% if settings.detection_model == 'cnn' %}selected{% endif %}>CNN (Slower, more accurate)</option>
+          </select>
+          <small style="opacity: 0.6; display: block; margin-top: 6px;">
+            <i class="bi bi-info-circle"></i> CNN requires GPU for best performance
+          </small>
+        </div>
+      </div>
+
+      <!-- ── Camera Settings ── -->
+      <div class="spatial-card" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 20px 0; font-weight: 600;">
+          <i class="bi bi-camera-video-fill" style="color: #34C759;"></i> Camera Settings
+        </h3>
+
+        <!-- Camera Resolution -->
+        <div class="mb-4">
+          <label class="form-label" for="cameraResolution" style="font-weight: 500;">Camera Resolution</label>
+          <select class="spatial-input" name="camera_resolution" id="cameraResolution">
+            <option value="320x240" {% if settings.camera_resolution == '320x240' %}selected{% endif %}>320 × 240 (Low)</option>
+            <option value="640x480" {% if settings.camera_resolution == '640x480' %}selected{% endif %}>640 × 480 (Medium)</option>
+            <option value="1280x720" {% if settings.camera_resolution == '1280x720' %}selected{% endif %}>1280 × 720 (HD)</option>
+          </select>
+          <small style="opacity: 0.6; display: block; margin-top: 6px;">
+            <i class="bi bi-info-circle"></i> Higher resolution improves accuracy but uses more bandwidth
+          </small>
+        </div>
+
+        <!-- Frame Rate -->
+        <div class="mb-4">
+          <label class="form-label" for="frameRate" style="font-weight: 500;">Capture Interval (seconds)</label>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <input type="range" class="form-range" id="frameRate" name="capture_interval"
+                   min="1" max="10" step="1" value="{{ settings.capture_interval or 3 }}"
+                   oninput="document.getElementById('frameRateValue').textContent = this.value + 's'"
+                   style="flex: 1;">
+            <span id="frameRateValue" class="spatial-pill-btn btn-sm"
+                  style="min-width: 50px; text-align: center; pointer-events: none;">
+              {{ settings.capture_interval or 3 }}s
+            </span>
+          </div>
+          <small style="opacity: 0.6; display: block; margin-top: 6px;">
+            <i class="bi bi-info-circle"></i> How often to capture frames for recognition
+          </small>
+        </div>
+      </div>
+
+      <!-- ── Attendance Settings ── -->
+      <div class="spatial-card" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 20px 0; font-weight: 600;">
+          <i class="bi bi-clock-fill" style="color: #FF9500;"></i> Attendance Settings
+        </h3>
+
+        <!-- Late Threshold -->
+        <div class="mb-4">
+          <label class="form-label" for="lateThreshold" style="font-weight: 500;">Late After (minutes)</label>
+          <input type="number" class="spatial-input" name="late_threshold" id="lateThreshold"
+                 min="1" max="120" value="{{ settings.late_threshold or 15 }}"
+                 style="max-width: 200px;">
+          <small style="opacity: 0.6; display: block; margin-top: 6px;">
+            <i class="bi bi-info-circle"></i> Minutes after start time to mark as "Late"
+          </small>
+        </div>
+
+        <!-- Attendance Start Time -->
+        <div class="mb-4">
+          <label class="form-label" for="attendanceStartTime" style="font-weight: 500;">Default Start Time</label>
+          <input type="time" class="spatial-input" name="attendance_start_time" id="attendanceStartTime"
+                 value="{{ settings.attendance_start_time or '09:00' }}"
+                 style="max-width: 200px;">
+        </div>
+      </div>
+
+      <!-- ── Display Settings ── -->
+      <div class="spatial-card" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 20px 0; font-weight: 600;">
+          <i class="bi bi-palette-fill" style="color: #AF52DE;"></i> Display Settings
+        </h3>
+
+        <!-- Time Format -->
+        <div class="mb-4">
+          <label class="form-label" style="font-weight: 500;">Time Format</label>
+          <div style="display: flex; gap: 12px;">
+            <label class="spatial-pill-btn btn-sm {% if settings.attendance_time_format == '12h' %}active{% endif %}"
+                   style="cursor: pointer;" id="timeFormat12h">
+              <input type="radio" name="attendance_time_format" value="12h"
+                     {% if settings.attendance_time_format == '12h' %}checked{% endif %}
+                     style="display: none;"
+                     onchange="document.getElementById('timeFormat12h').classList.add('active'); document.getElementById('timeFormat24h').classList.remove('active');">
+              <i class="bi bi-clock"></i> 12 Hour
+            </label>
+            <label class="spatial-pill-btn btn-sm {% if settings.attendance_time_format == '24h' %}active{% endif %}"
+                   style="cursor: pointer;" id="timeFormat24h">
+              <input type="radio" name="attendance_time_format" value="24h"
+                     {% if settings.attendance_time_format == '24h' %}checked{% endif %}
+                     style="display: none;"
+                     onchange="document.getElementById('timeFormat24h').classList.add('active'); document.getElementById('timeFormat12h').classList.remove('active');">
+              <i class="bi bi-clock-history"></i> 24 Hour
+            </label>
+          </div>
+        </div>
+
+        <!-- Theme -->
+        <div class="mb-4">
+          <label class="form-label" style="font-weight: 500;">Theme</label>
+          <div style="display: flex; gap: 12px;">
+            <label class="spatial-pill-btn btn-sm {% if settings.theme == 'light' %}active{% endif %}"
+                   style="cursor: pointer;" id="themeLight">
+              <input type="radio" name="theme" value="light"
+                     {% if settings.theme == 'light' %}checked{% endif %}
+                     style="display: none;"
+                     onchange="document.getElementById('themeLight').classList.add('active'); document.getElementById('themeDark').classList.remove('active');">
+              <i class="bi bi-sun-fill"></i> Light
+            </label>
+            <label class="spatial-pill-btn btn-sm {% if settings.theme == 'dark' %}active{% endif %}"
+                   style="cursor: pointer;" id="themeDark">
+              <input type="radio" name="theme" value="dark"
+                     {% if settings.theme == 'dark' %}checked{% endif %}
+                     style="display: none;"
+                     onchange="document.getElementById('themeDark').classList.add('active'); document.getElementById('themeLight').classList.remove('active');">
+              <i class="bi bi-moon-fill"></i> Dark
+            </label>
+          </div>
+        </div>
+
+        <!-- Records Per Page -->
+        <div class="mb-4">
+          <label class="form-label" for="recordsPerPage" style="font-weight: 500;">Records Per Page</label>
+          <select class="spatial-input" name="records_per_page" id="recordsPerPage" style="max-width: 200px;">
+            <option value="10" {% if settings.records_per_page == 10 %}selected{% endif %}>10</option>
+            <option value="25" {% if settings.records_per_page == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if settings.records_per_page == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if settings.records_per_page == 100 %}selected{% endif %}>100</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ── Save Button ── -->
+      <div style="text-align: center; margin-top: 24px; margin-bottom: 24px;">
+        <button type="submit" class="spatial-pill-btn btn-primary" id="saveSettingsBtn"
+                style="padding: 12px 48px; font-size: 1.05rem;">
+          <i class="bi bi-check-circle"></i> Save Settings
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

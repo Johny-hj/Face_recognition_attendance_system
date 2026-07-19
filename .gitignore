@@ -1,0 +1,32 @@
+# Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database
+*.db
+*.sqlite3
+instance/
+
+# Uploads and temporary files
+static/uploads/
+*.jpg
+*.jpeg
+*.png
+!static/img/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

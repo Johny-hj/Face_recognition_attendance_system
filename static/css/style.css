@@ -1,0 +1,832 @@
+/* ============================================
+   COMPONENT STYLES — Face Attendance System
+   Extends the Spatial Design System
+   ============================================ */
+
+@import url('spatial.css');
+
+
+/* ===========================
+   1. Page Layout Overrides
+   =========================== */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.page-header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ===========================
+   2. Camera Viewport
+   =========================== */
+
+.camera-viewport {
+  position: relative;
+  border-radius: var(--spatial-radius);
+  overflow: hidden;
+  background: #000;
+}
+
+.camera-viewport video {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--spatial-radius);
+}
+
+.camera-viewport canvas {
+  width: 100%;
+  height: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: var(--spatial-radius);
+  pointer-events: none;
+}
+
+.camera-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.camera-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--spatial-radius-pill);
+  background: var(--spatial-glass-bg);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.camera-counter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.camera-counter {
+  text-align: center;
+  padding: 12px;
+  border-radius: var(--spatial-radius-sm);
+  background: var(--spatial-glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.camera-counter .counter-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.camera-counter .counter-label {
+  font-size: 11px;
+  color: var(--spatial-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+
+/* ===========================
+   3. Face Registration
+   =========================== */
+
+.capture-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--spatial-red);
+  border: 4px solid #fff;
+  cursor: pointer;
+  transition: var(--spatial-transition);
+  box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capture-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 8px rgba(255, 59, 48, 0.2);
+}
+
+.capture-btn:active {
+  transform: scale(0.95);
+}
+
+.capture-btn.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(255, 59, 48, 0.1);
+  }
+}
+
+.captured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.captured-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--spatial-radius-sm);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: var(--spatial-transition-fast);
+}
+
+.captured-grid img:hover {
+  transform: scale(1.05);
+  border-color: var(--spatial-blue);
+}
+
+.dropzone {
+  border: 2px dashed rgba(0, 122, 255, 0.3);
+  border-radius: var(--spatial-radius);
+  padding: 40px;
+  text-align: center;
+  color: var(--spatial-text-tertiary);
+  transition: var(--spatial-transition);
+  cursor: pointer;
+}
+
+.dropzone:hover,
+.dropzone.drag-over {
+  border-color: var(--spatial-blue);
+  background: rgba(0, 122, 255, 0.04);
+  color: var(--spatial-blue);
+}
+
+.dropzone i {
+  font-size: 36px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.dropzone p {
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.reg-video-container {
+  position: relative;
+  border-radius: var(--spatial-radius);
+  overflow: hidden;
+  background: #000;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.reg-video-container video {
+  width: 100%;
+  display: block;
+}
+
+
+/* ===========================
+   4. Recognition Result Items
+   =========================== */
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--spatial-radius-sm);
+  background: var(--spatial-glass-bg);
+  margin-bottom: 8px;
+  border: var(--spatial-glass-border-subtle);
+  transition: var(--spatial-transition-fast);
+  animation: resultSlideIn 0.3s ease;
+}
+
+@keyframes resultSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.result-item.recognized {
+  border-left: 3px solid var(--spatial-green);
+}
+
+.result-item.unknown {
+  border-left: 3px solid var(--spatial-red);
+}
+
+.result-item.duplicate {
+  border-left: 3px solid var(--spatial-orange);
+}
+
+.results-panel {
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.results-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.results-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.results-panel::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+
+/* ===========================
+   5. Settings
+   =========================== */
+
+.settings-card {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.spatial-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(0, 122, 255, 0.15);
+  outline: none;
+  transition: var(--spatial-transition-fast);
+}
+
+.spatial-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--spatial-blue);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+  transition: var(--spatial-transition-fast);
+}
+
+.spatial-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+}
+
+.spatial-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--spatial-blue);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+/* iOS-style Toggle Switch */
+.spatial-toggle {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.spatial-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.spatial-toggle .toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 32px;
+  transition: var(--spatial-transition);
+}
+
+.spatial-toggle .toggle-slider::before {
+  position: absolute;
+  content: '';
+  height: 26px;
+  width: 26px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: var(--spatial-transition);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.spatial-toggle input:checked + .toggle-slider {
+  background: var(--spatial-green);
+}
+
+.spatial-toggle input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: var(--spatial-glass-border-subtle);
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row-info {
+  flex: 1;
+  margin-right: 16px;
+}
+
+.settings-row-info h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.settings-row-info p {
+  font-size: 13px;
+  color: var(--spatial-text-secondary);
+}
+
+.range-value {
+  display: inline-block;
+  min-width: 48px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--spatial-blue);
+  font-size: 14px;
+}
+
+
+/* ===========================
+   6. Quick Action Buttons
+   =========================== */
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 24px;
+  border-radius: var(--spatial-radius);
+  border: var(--spatial-glass-border);
+  background: var(--spatial-glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  cursor: pointer;
+  transition: var(--spatial-transition);
+  font-family: var(--spatial-font);
+  color: var(--spatial-text-primary);
+  text-decoration: none;
+  min-width: 120px;
+  text-align: center;
+}
+
+.action-btn i {
+  font-size: 24px;
+  color: var(--spatial-blue);
+}
+
+.action-btn span {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  transform: scale(1.04);
+  box-shadow: var(--spatial-shadow-hover);
+}
+
+.action-btn:active {
+  transform: scale(0.97);
+}
+
+
+/* ===========================
+   7. Print Styles
+   =========================== */
+
+@media print {
+  .spatial-sidebar,
+  .spatial-navbar,
+  .no-print,
+  .sidebar-toggle,
+  .theme-toggle {
+    display: none !important;
+  }
+
+  .spatial-main {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .spatial-card,
+  .stat-card {
+    box-shadow: none;
+    backdrop-filter: none;
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+  }
+
+  .data-table th,
+  .data-table td {
+    border: 1px solid #ddd;
+  }
+}
+
+
+/* ===========================
+   8. Chart Containers
+   =========================== */
+
+.chart-container {
+  position: relative;
+  padding: 16px;
+}
+
+.chart-container canvas {
+  max-height: 300px;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.chart-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+
+/* ===========================
+   9. Student Photo
+   =========================== */
+
+.student-photo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.student-photo-lg {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.student-photo-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 122, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--spatial-blue);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.student-photo-placeholder-lg {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(0, 122, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--spatial-blue);
+  font-size: 32px;
+}
+
+
+/* ===========================
+   10. Empty State
+   =========================== */
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--spatial-text-tertiary);
+}
+
+.empty-state i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+  display: block;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--spatial-text-secondary);
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  font-size: 14px;
+  max-width: 360px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+
+/* ===========================
+   11. Status Indicators
+   =========================== */
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-dot.online {
+  background: var(--spatial-green);
+  box-shadow: 0 0 8px rgba(52, 199, 89, 0.5);
+}
+
+.status-dot.offline {
+  background: var(--spatial-red);
+}
+
+.status-dot.away {
+  background: var(--spatial-orange);
+  box-shadow: 0 0 8px rgba(255, 149, 0, 0.4);
+}
+
+
+/* ===========================
+   12. Confidence Bar
+   =========================== */
+
+.confidence-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  width: 100%;
+}
+
+[data-theme="dark"] .confidence-bar {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.confidence-bar-fill.high {
+  background: var(--spatial-green);
+}
+
+.confidence-bar-fill.medium {
+  background: var(--spatial-orange);
+}
+
+.confidence-bar-fill.low {
+  background: var(--spatial-red);
+}
+
+
+/* ===========================
+   Login Page
+   =========================== */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-card .login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-card .login-header i {
+  font-size: 48px;
+  color: var(--spatial-blue);
+  margin-bottom: 16px;
+  display: block;
+}
+
+.login-card .login-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.login-card .login-header p {
+  color: var(--spatial-text-secondary);
+  font-size: 14px;
+}
+
+.login-error {
+  padding: 12px 16px;
+  border-radius: var(--spatial-radius-sm);
+  background: rgba(255, 59, 48, 0.08);
+  color: var(--spatial-red);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+/* ===========================
+   Filter Bar
+   =========================== */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.filter-bar .spatial-input {
+  max-width: 240px;
+}
+
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar .spatial-input {
+    max-width: none;
+  }
+}
+
+
+/* ===========================
+   Table Responsive Wrapper
+   =========================== */
+
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--spatial-radius);
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+
+/* ===========================
+   Alert Messages
+   =========================== */
+
+.spatial-alert {
+  padding: 14px 20px;
+  border-radius: var(--spatial-radius);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.spatial-alert.alert-success {
+  background: rgba(52, 199, 89, 0.1);
+  color: var(--spatial-green);
+  border: 1px solid rgba(52, 199, 89, 0.2);
+}
+
+.spatial-alert.alert-danger {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--spatial-red);
+  border: 1px solid rgba(255, 59, 48, 0.2);
+}
+
+.spatial-alert.alert-warning {
+  background: rgba(255, 149, 0, 0.1);
+  color: var(--spatial-orange);
+  border: 1px solid rgba(255, 149, 0, 0.2);
+}
+
+.spatial-alert.alert-info {
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--spatial-blue);
+  border: 1px solid rgba(0, 122, 255, 0.2);
+}

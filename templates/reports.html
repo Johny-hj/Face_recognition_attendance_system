@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}Reports - Face Attendance{% endblock %}
+{% block page_title %}Attendance Reports{% endblock %}
+
+{% block content %}
+<!-- ── Summary Stats Row ── -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="stat-card" id="statTotalRecords">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(0, 122, 255, 0.15); display: flex; align-items: center; justify-content: center;">
+          <i class="bi bi-clipboard-data-fill" style="font-size: 1.4rem; color: #007AFF;"></i>
+        </div>
+        <div>
+          <div style="font-size: 0.8rem; opacity: 0.7; font-weight: 500;">Total Records</div>
+          <div style="font-size: 1.6rem; font-weight: 700; line-height: 1.2;">
+            {% if records %}{{ records.total }}{% else %}0{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card" id="statPresentCount">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(52, 199, 89, 0.15); display: flex; align-items: center; justify-content: center;">
+          <i class="bi bi-check-circle-fill" style="font-size: 1.4rem; color: #34C759;"></i>
+        </div>
+        <div>
+          <div style="font-size: 0.8rem; opacity: 0.7; font-weight: 500;">Present</div>
+          <div style="font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: #34C759;">
+            {% set present_count = [] %}
+            {% if records and records.items %}
+              {% for r in records.items %}
+                {% if r.status == 'Present' %}
+                  {% if present_count.append(1) %}{% endif %}
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+            {{ present_count | length }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card" id="statLateCount">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(255, 149, 0, 0.15); display: flex; align-items: center; justify-content: center;">
+          <i class="bi bi-clock-fill" style="font-size: 1.4rem; color: #FF9500;"></i>
+        </div>
+        <div>
+          <div style="font-size: 0.8rem; opacity: 0.7; font-weight: 500;">Late</div>
+          <div style="font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: #FF9500;">
+            {% set late_count = [] %}
+            {% if records and records.items %}
+              {% for r in records.items %}
+                {% if r.status == 'Late' %}
+                  {% if late_count.append(1) %}{% endif %}
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+            {{ late_count | length }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Filter Card ── -->
+<div class="spatial-card" style="margin-bottom: 24px;">
+  <h3 style="margin: 0 0 16px 0; font-weight: 600;">
+    <i class="bi bi-funnel-fill" style="color: #AF52DE;"></i> Report Filters
+  </h3>
+  <form method="GET" action="{{ url_for('reports.index') }}" id="reportFilterForm">
+    <div class="row g-3 mb-3">
+      <!-- Start Date -->
+      <div class="col-md-3 col-sm-6">
+        <label class="form-label" style="font-weight: 500; font-size: 0.85rem; opacity: 0.8;">
+          <i class="bi bi-calendar-event"></i> Start Date
+        </label>
+        <input type="date" class="spatial-input" name="start_date" id="filterStartDate"
+               value="{{ filters.start_date or '' }}">
+      </div>
+      <!-- End Date -->
+      <div class="col-md-3 col-sm-6">
+        <label class="form-label" style="font-weight: 500; font-size: 0.85rem; opacity: 0.8;">
+          <i class="bi bi-calendar-event"></i> End Date
+        </label>
+        <input type="date" class="spatial-input" name="end_date" id="filterEndDate"
+               value="{{ filters.end_date or '' }}">
+      </div>
+      <!-- Department -->
+      <div class="col-md-3 col-sm-6">
+        <label class="form-label" style="font-weight: 500; font-size: 0.85rem; opacity: 0.8;">
+          <i class="bi bi-building"></i> Department
+        </label>
+        <select class="spatial-input" name="department" id="filterReportDepartment">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+          <option value="{{ dept }}" {% if filters.department == dept %}selected{% endif %}>{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <!-- Student Name -->
+      <div class="col-md-3 col-sm-6">
+        <label class="form-label" style="font-weight: 500; font-size: 0.85rem; opacity: 0.8;">
+          <i class="bi bi-person-lines-fill"></i> Student Name
+        </label>
+        <input type="text" class="spatial-input" name="student_name" id="filterStudentName"
+               placeholder="Search by name…" value="{{ filters.student_name or '' }}">
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <button type="submit" class="spatial-pill-btn btn-primary" id="generateReportBtn">
+        <i class="bi bi-funnel"></i> Generate
+      </button>
+      <a href="{{ url_for('reports.export') }}?format=excel&start_date={{ filters.start_date or '' }}&end_date={{ filters.end_date or '' }}&department={{ filters.department or '' }}&student_name={{ filters.student_name or '' }}"
+         class="spatial-pill-btn btn-success" id="exportExcelBtn">
+        <i class="bi bi-file-earmark-excel"></i> Excel
+      </a>
+      <a href="{{ url_for('reports.export') }}?format=csv&start_date={{ filters.start_date or '' }}&end_date={{ filters.end_date or '' }}&department={{ filters.department or '' }}&student_name={{ filters.student_name or '' }}"
+         class="spatial-pill-btn btn-success" id="exportCsvBtn">
+        <i class="bi bi-filetype-csv"></i> CSV
+      </a>
+      <button type="button" class="spatial-pill-btn btn-secondary" id="printReportBtn" onclick="window.print()">
+        <i class="bi bi-printer"></i> Print
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ── Report Table ── -->
+<div class="spatial-card" id="reportTable">
+  <h3 style="margin: 0 0 16px 0; font-weight: 600;">
+    <i class="bi bi-table" style="color: #007AFF;"></i> Report Data
+  </h3>
+  <div class="table-responsive">
+    <table class="data-table" id="reportDataTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th><i class="bi bi-calendar3"></i> Date</th>
+          <th><i class="bi bi-clock"></i> Time</th>
+          <th><i class="bi bi-person"></i> Student Name</th>
+          <th><i class="bi bi-hash"></i> Roll No</th>
+          <th><i class="bi bi-building"></i> Department</th>
+          <th><i class="bi bi-check2-circle"></i> Status</th>
+          <th><i class="bi bi-speedometer2"></i> Confidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if records and records.items %}
+          {% for record in records.items %}
+          <tr>
+            <td>{{ loop.index + (records.page - 1) * records.per_page }}</td>
+            <td>{{ record.date }}</td>
+            <td>{{ record.time }}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(175, 82, 222, 0.15); display: flex; align-items: center; justify-content: center; color: #AF52DE; font-weight: 600; font-size: 0.8rem;">
+                  {{ record.student.name[0] }}
+                </div>
+                {{ record.student.name }}
+              </div>
+            </td>
+            <td><code style="background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 6px;">{{ record.student.roll_number }}</code></td>
+            <td>{{ record.student.department }}</td>
+            <td>
+              <span class="status-badge {% if record.status == 'Present' %}badge-present{% elif record.status == 'Late' %}badge-late{% else %}badge-absent{% endif %}">
+                {% if record.status == 'Present' %}
+                  <i class="bi bi-check-circle-fill"></i>
+                {% elif record.status == 'Late' %}
+                  <i class="bi bi-clock-fill"></i>
+                {% else %}
+                  <i class="bi bi-x-circle-fill"></i>
+                {% endif %}
+                {{ record.status }}
+              </span>
+            </td>
+            <td>{{ record.confidence }}%</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 60px 20px;">
+              <div style="opacity: 0.5;">
+                <i class="bi bi-bar-chart-line" style="font-size: 3rem; display: block; margin-bottom: 12px;"></i>
+                <p style="font-size: 1.1rem; font-weight: 500; margin-bottom: 4px;">No records found</p>
+                <small>Adjust your filters and generate a new report</small>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Pagination ── -->
+{% if records and records.pages > 1 %}
+<nav class="pagination-nav" aria-label="Report pagination" style="margin-top: 24px;">
+  <ul class="pagination" style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; list-style: none; padding: 0; margin: 0;">
+    {% if records.has_prev %}
+    <li>
+      <a href="?page={{ records.prev_num }}&start_date={{ filters.start_date or '' }}&end_date={{ filters.end_date or '' }}&department={{ filters.department or '' }}&student_name={{ filters.student_name or '' }}"
+         class="spatial-pill-btn btn-sm" id="reportPaginationPrev">
+        <i class="bi bi-chevron-left"></i> Previous
+      </a>
+    </li>
+    {% endif %}
+
+    {% for p in range(1, records.pages + 1) %}
+    <li>
+      <a href="?page={{ p }}&start_date={{ filters.start_date or '' }}&end_date={{ filters.end_date or '' }}&department={{ filters.department or '' }}&student_name={{ filters.student_name or '' }}"
+         class="spatial-pill-btn btn-sm {% if p == records.page %}active{% endif %}"
+         id="reportPaginationPage{{ p }}">
+        {{ p }}
+      </a>
+    </li>
+    {% endfor %}
+
+    {% if records.has_next %}
+    <li>
+      <a href="?page={{ records.next_num }}&start_date={{ filters.start_date or '' }}&end_date={{ filters.end_date or '' }}&department={{ filters.department or '' }}&student_name={{ filters.student_name or '' }}"
+         class="spatial-pill-btn btn-sm" id="reportPaginationNext">
+        Next <i class="bi bi-chevron-right"></i>
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

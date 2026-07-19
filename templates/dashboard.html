@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - Face Attendance{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- ── Stat Cards Row ── -->
+<div class="row g-4 mb-4">
+
+  <!-- Total Students -->
+  <div class="col-xl-3 col-md-6">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(0,122,255,0.15); color: #007AFF;">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Students</span>
+        <span class="stat-value">{{ stats.total_students }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Present Today -->
+  <div class="col-xl-3 col-md-6">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(52,199,89,0.15); color: #34C759;">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Present Today</span>
+        <span class="stat-value">{{ stats.today_present }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Absent Today -->
+  <div class="col-xl-3 col-md-6">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(255,59,48,0.15); color: #FF3B30;">
+        <i class="bi bi-x-circle-fill"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Absent Today</span>
+        <span class="stat-value">{{ stats.today_absent }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recognition Rate -->
+  <div class="col-xl-3 col-md-6">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(175,82,222,0.15); color: #AF52DE;">
+        <i class="bi bi-cpu-fill"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Recognition Rate</span>
+        <span class="stat-value">{{ stats.recognition_rate }}%</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Chart Cards Row ── -->
+<div class="row g-4 mb-4">
+
+  <!-- Weekly Attendance Chart -->
+  <div class="col-lg-6">
+    <div class="spatial-card">
+      <div class="spatial-card-header">
+        <h5 class="spatial-card-title"><i class="bi bi-bar-chart-fill me-2" style="color:#007AFF;"></i>Weekly Attendance</h5>
+      </div>
+      <div class="spatial-card-body">
+        <canvas id="weeklyChart" height="260"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Department Distribution Chart -->
+  <div class="col-lg-6">
+    <div class="spatial-card">
+      <div class="spatial-card-header">
+        <h5 class="spatial-card-title"><i class="bi bi-pie-chart-fill me-2" style="color:#AF52DE;"></i>Department Distribution</h5>
+      </div>
+      <div class="spatial-card-body">
+        <canvas id="deptChart" height="260"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Quick Actions & Recent Attendance Row ── -->
+<div class="row g-4 mb-4">
+
+  <!-- Quick Actions -->
+  <div class="col-lg-4">
+    <div class="spatial-card">
+      <div class="spatial-card-header">
+        <h5 class="spatial-card-title"><i class="bi bi-lightning-charge-fill me-2" style="color:#FF9500;"></i>Quick Actions</h5>
+      </div>
+      <div class="spatial-card-body d-flex flex-column gap-3">
+        <a href="/attendance/start" class="spatial-pill-btn btn-primary w-100">
+          <i class="bi bi-camera-video-fill me-2"></i> Start Attendance
+        </a>
+        <a href="/attendance/download" class="spatial-pill-btn btn-success w-100">
+          <i class="bi bi-download me-2"></i> Download Today's Report
+        </a>
+        <a href="/reports" class="spatial-pill-btn btn-info w-100">
+          <i class="bi bi-bar-chart-line me-2"></i> View Reports
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Attendance -->
+  <div class="col-lg-8">
+    <div class="spatial-card">
+      <div class="spatial-card-header">
+        <h5 class="spatial-card-title"><i class="bi bi-clock-history me-2" style="color:#34C759;"></i>Recent Attendance</h5>
+      </div>
+      <div class="spatial-card-body">
+        <div class="table-responsive">
+          <table class="data-table" id="recentAttendanceTable">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Roll No</th>
+                <th>Department</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for record in recent %}
+              <tr>
+                <td>{{ record.student.name }}</td>
+                <td>{{ record.student.roll_number }}</td>
+                <td>{{ record.student.department }}</td>
+                <td>{{ record.time }}</td>
+                <td>
+                  <span class="status-badge {% if record.status == 'Present' %}badge-present{% elif record.status == 'Late' %}badge-late{% else %}badge-absent{% endif %}">
+                    {{ record.status }}
+                  </span>
+                </td>
+                <td>
+                  <span class="confidence-badge" style="--confidence: {{ record.confidence }}">{{ record.confidence }}%</span>
+                </td>
+              </tr>
+              {% endfor %}
+
+              {% if not recent %}
+              <tr>
+                <td colspan="6" class="text-center py-5">
+                  <div class="empty-state">
+                    <i class="bi bi-inbox" style="font-size: 2.5rem; color: rgba(255,255,255,0.25);"></i>
+                    <p class="mt-3" style="color: rgba(255,255,255,0.45); font-size: 0.95rem;">No recent attendance records found.</p>
+                  </div>
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const weekData = {{ stats.week_data | tojson }};
+  const deptData = {{ stats.dept_data | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

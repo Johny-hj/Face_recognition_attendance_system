@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}Register Face - {{ student.name }}{% endblock %}
+{% block page_title %}Register Face - {{ student.name }}{% endblock %}
+
+{% block content %}
+<!-- ── Student Info Card ── -->
+<div class="spatial-card mb-4">
+  <div class="spatial-card-body">
+    <div class="row align-items-center g-4">
+
+      <!-- Student Photo -->
+      <div class="col-auto">
+        {% if student.photo %}
+        <img src="{{ url_for('static', filename='uploads/' + student.photo) }}" alt="{{ student.name }}" class="student-avatar-lg" id="studentPhoto">
+        {% else %}
+        <div class="student-avatar-lg-placeholder" id="studentPhotoPlaceholder">
+          <i class="bi bi-person-fill"></i>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Student Details -->
+      <div class="col">
+        <h4 class="mb-1" style="color: #fff; font-weight: 600;">{{ student.name }}</h4>
+        <div class="d-flex flex-wrap gap-3 mt-2">
+          <span class="student-detail-chip">
+            <i class="bi bi-hash me-1" style="color:#007AFF;"></i> {{ student.roll_number }}
+          </span>
+          <span class="student-detail-chip">
+            <i class="bi bi-building me-1" style="color:#AF52DE;"></i> {{ student.department }}
+          </span>
+          {% if student.year %}
+          <span class="student-detail-chip">
+            <i class="bi bi-calendar-event me-1" style="color:#FF9500;"></i> Year {{ student.year }}
+          </span>
+          {% endif %}
+          {% if student.section %}
+          <span class="student-detail-chip">
+            <i class="bi bi-grid-3x3-gap me-1" style="color:#34C759;"></i> Section {{ student.section }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Face Status -->
+      <div class="col-auto">
+        {% if student.face_encoding %}
+        <div class="face-status-large face-registered" id="faceStatusIndicator">
+          <i class="bi bi-shield-fill-check me-2"></i> Face Registered
+        </div>
+        {% else %}
+        <div class="face-status-large face-not-registered" id="faceStatusIndicator">
+          <i class="bi bi-shield-fill-x me-2"></i> Not Registered
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Two-Panel Layout: Webcam + Upload ── -->
+<div class="row g-4 mb-4">
+
+  <!-- ─── Left Panel: Webcam Capture ─── -->
+  <div class="col-lg-6">
+    <div class="spatial-card h-100">
+      <div class="spatial-card-header">
+        <h5 class="spatial-card-title"><i class="bi bi-webcam me-2" style="color:#007AFF;"></i>Capture from Webcam</h5>
+      </div>
+      <div class="spatial-card-body">
+
+        <!-- Video Feed -->
+        <div class="webcam-container" id="webcamContainer">
+          <video id="webcamVideo" autoplay playsinline class="webcam-video"></video>
+          <canvas id="captureCanvas" style="display:none;"></canvas>
+          <div class="webcam-overlay" id="webcamOverlay">
+            <i class="bi bi-camera-video" style="font-size: 3rem; color: rgba(255,255,255,0.3);"></i>
+            <p class="mt-2" style="color: rgba(255,255,255,0.4); font-size: 0.9rem;">Camera is off</p>
+          </div>
+        </div>
+
+        <!-- Camera Controls -->
+        <div class="d-flex flex-wrap gap-2 mt-3 justify-content-center">
+          <button class="spatial-pill-btn btn-success" id="startCameraBtn">
+            <i class="bi bi-camera-video me-1"></i> Start Camera
+          </button>
+          <button class="spatial-pill-btn btn-primary" id="captureBtn" disabled>
+            <i class="bi bi-camera me-1"></i> Capture
+          </button>
+          <button class="spatial-pill-btn btn-danger" id="stopCameraBtn" disabled>
+            <i class="bi bi-stop-circle me-1"></i> Stop
+          </button>
+        </div>
+
+        <!-- Captured Images Preview Grid -->
+        <div class="mt-4">
+          <h6 class="text-white-50 mb-2" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Captured Images</h6>
+          <div class="captured-images-grid" id="capturedImages">
+            <!-- Thumbnails will be injected here by JS -->
+            <div class="captured-empty-state" id="capturedEmptyState">
+              <i class="bi bi-images" style="font-size: 1.5rem; color: rgba(255,255,255,0.2);"></i>
+              <p style="color: rgba(255,255,255,0.3); font-size: 0.8rem; margin-top: 0.5rem;">No images captured yet</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Right Panel: Upload Image ─── -->
+  <div class="col-lg-6">
+    <div class="spatial-card h-100">
+      <div class="spatial-card-header">
+        <h5 class="spatial-card-title"><i class="bi bi-cloud-arrow-up me-2" style="color:#34C759;"></i>Upload Image</h5>
+      </div>
+      <div class="spatial-card-body">
+
+        <!-- Drop Zone -->
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-zone-content">
+            <i class="bi bi-cloud-arrow-up" style="font-size: 3.5rem; color: rgba(255,255,255,0.3);"></i>
+            <p class="mt-3" style="color: rgba(255,255,255,0.6); font-size: 1rem; font-weight: 500;">Drag &amp; drop an image here</p>
+            <p style="color: rgba(255,255,255,0.35); font-size: 0.85rem;">or click to browse</p>
+            <div class="mt-3">
+              <span class="spatial-pill-btn btn-primary btn-sm" style="pointer-events:none;">
+                <i class="bi bi-folder2-open me-1"></i> Browse Files
+              </span>
+            </div>
+          </div>
+          <input type="file" id="fileInput" accept="image/*" hidden>
+        </div>
+
+        <!-- Upload Preview -->
+        <div class="upload-preview-area mt-4" id="uploadPreview">
+          <!-- Upload preview thumbnails will appear here -->
+        </div>
+
+        <!-- Supported Formats Info -->
+        <div class="mt-3 text-center">
+          <small style="color: rgba(255,255,255,0.3); font-size: 0.78rem;">
+            <i class="bi bi-info-circle me-1"></i> Supported formats: JPG, PNG, WEBP — max 10 MB
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Action Bar ── -->
+<div class="spatial-card mb-4">
+  <div class="spatial-card-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <a href="/students" class="spatial-pill-btn btn-secondary" id="backToStudentsBtn">
+        <i class="bi bi-arrow-left me-1"></i> Back to Students
+      </a>
+      <button class="spatial-pill-btn btn-primary btn-lg" id="registerBtn">
+        <i class="bi bi-person-check me-2"></i> Register Face
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Status / Progress Area ── -->
+<div id="statusArea" class="mb-4">
+  <!-- Progress bar and result messages injected dynamically by JS -->
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script>const studentId = {{ student.id }};</script>
+<script src="{{ url_for('static', filename='js/face_register.js') }}?v=123"></script>
+{% endblock %}
