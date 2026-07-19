@@ -134,7 +134,8 @@ Visit **[http://localhost:5000](http://localhost:5000)**
 3. Connect your repository
 4. Render will detect and use `render.yaml` automatically
 5. After deployment, open the **Render Shell** and run:
-
+Note: 
+Deployment Status: The application was deployed to Render; however, the deployment was unsuccessful due to the large size and resource requirements of dependencies such as dlib, OpenCV, and other face-recognition-related libraries. These dependencies significantly increase build size and memory consumption, exceeding the platform's deployment constraints. Further optimization and dependency management are required before the application can be successfully deployed.   
 ```bash
 flask init-db
 flask seed-admin
