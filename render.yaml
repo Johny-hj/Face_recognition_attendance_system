@@ -3,7 +3,6 @@ services:
     name: face-attendance-system
     runtime: python
     buildCommand: |
-      apt-get update && apt-get install -y cmake build-essential libopenblas-dev liblapack-dev
       pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
